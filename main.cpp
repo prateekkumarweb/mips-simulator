@@ -2,278 +2,279 @@
 #include <fstream>
 #include <regex>
 
-int get_reg(std::string s) {
-    if (s == "0") return 0;
-    if (s == "1") return 1;
-    if (s == "2") return 2;
-    if (s == "3") return 3;
-    if (s == "4") return 4;
-    if (s == "5") return 5;
-    if (s == "6") return 6;
-    if (s == "7") return 7;
-    if (s == "8") return 8;
-    if (s == "9") return 9;
-    if (s == "10") return 10;
-    if (s == "11") return 11;
-    if (s == "12") return 12;
-    if (s == "13") return 13;
-    if (s == "14") return 14;
-    if (s == "15") return 15;
-    if (s == "16") return 16;
-    if (s == "17") return 17;
-    if (s == "18") return 18;
-    if (s == "19") return 19;
-    if (s == "20") return 20;
-    if (s == "21") return 21;
-    if (s == "22") return 22;
-    if (s == "23") return 23;
-    if (s == "24") return 24;
-    if (s == "25") return 25;
-    if (s == "26") return 26;
-    if (s == "27") return 27;
-    if (s == "28") return 28;
-    if (s == "29") return 29;
-    if (s == "30") return 30;
-    if (s == "31") return 31;
-    if (s == "r0") return 0;
-    if (s == "zero") return 0;
-    if (s == "at") return 1;
-    if (s == "v0") return 2;
-    if (s == "v1") return 3;
-    if (s == "a0") return 4;
-    if (s == "a1") return 5;
-    if (s == "a2") return 6;
-    if (s == "a3") return 7;
-    if (s == "t0") return 8;
-    if (s == "t1") return 9;
-    if (s == "t2") return 10;
-    if (s == "t3") return 11;
-    if (s == "t4") return 12;
-    if (s == "t5") return 13;
-    if (s == "t6") return 14;
-    if (s == "t7") return 15;
-    if (s == "s0") return 16;
-    if (s == "s1") return 17;
-    if (s == "s2") return 18;
-    if (s == "s3") return 19;
-    if (s == "s4") return 20;
-    if (s == "s5") return 21;
-    if (s == "s6") return 22;
-    if (s == "s7") return 23;
-    if (s == "t8") return 24;
-    if (s == "t9") return 25;
-    if (s == "k0") return 26;
-    if (s == "k1") return 27;
-    if (s == "gp") return 28;
-    if (s == "sp") return 29;
-    if (s == "fp") return 30;
-    if (s == "s8") return 30;
-    if (s == "ra") return 31;
+int get_reg(std::string s, std::map<std::string, int> &reg_map) {
+    std::regex d_e("\\d+");
+    std::smatch sm;
+    if (std::regex_match(s, sm, d_e)) {
+        int r = std::stoi(s);
+        if (r == 1 || r == 26 || r == 27) return -1;
+        return std::stoi(s);
+    }
+    if (s == "zero" || s == "r0") return 0;
+    if (reg_map[s] != 0 && reg_map[s] != 1 && reg_map[s] != 26 && reg_map[s] != 27) return reg_map[s];
     return -1;
 }
 
-void print_reg(int *regs) {
-    std::cout << "$0 : " << " $0/$zero : " << regs[0] << std::endl;
-    std::cout << "$1 : " << " $at : " << regs[1] << std::endl;
-    std::cout << "$2 : " << " $v0 : " << regs[2] << std::endl;
-    std::cout << "$3 : " << " $v1 : " << regs[3] << std::endl;
-    std::cout << "$4 : " << " $a0 : " << regs[4] << std::endl;
-    std::cout << "$5 : " << " $a1 : " << regs[5] << std::endl;
-    std::cout << "$6 : " << " $a2 : " << regs[6] << std::endl;
-    std::cout << "$7 : " << " $a3 : " << regs[7] << std::endl;
-    std::cout << "$8 : " << " $t0 : " << regs[8] << std::endl;
-    std::cout << "$9 : " << " $t1 : " << regs[9] << std::endl;
-    std::cout << "$10 : " << " $t2 : " << regs[10] << std::endl;
-    std::cout << "$11 : " << " $t3 : " << regs[11] << std::endl;
-    std::cout << "$12 : " << " $t4 : " << regs[12] << std::endl;
-    std::cout << "$13 : " << " $t5 : " << regs[13] << std::endl;
-    std::cout << "$14 : " << " $t6 : " << regs[14] << std::endl;
-    std::cout << "$15 : " << " $t7 : " << regs[15] << std::endl;
-    std::cout << "$16 : " << " $s0 : " << regs[16] << std::endl;
-    std::cout << "$17 : " << " $s1 : " << regs[17] << std::endl;
-    std::cout << "$18 : " << " $s2 : " << regs[18] << std::endl;
-    std::cout << "$19 : " << " $s3 : " << regs[19] << std::endl;
-    std::cout << "$20 : " << " $s4 : " << regs[20] << std::endl;
-    std::cout << "$21 : " << " $s5 : " << regs[21] << std::endl;
-    std::cout << "$22 : " << " $s6 : " << regs[22] << std::endl;
-    std::cout << "$23 : " << " $s7 : " << regs[23] << std::endl;
-    std::cout << "$24 : " << " $t8 : " << regs[24] << std::endl;
-    std::cout << "$25 : " << " $t9 : " << regs[25] << std::endl;
-    std::cout << "$26 : " << " $k0 : " << regs[26] << std::endl;
-    std::cout << "$27 : " << " $k1 : " << regs[27] << std::endl;
-    std::cout << "$28 : " << " $gp : " << regs[28] << std::endl;
-    std::cout << "$29 : " << " $sp : " << regs[29] << std::endl;
-    std::cout << "$30 : " << " $fp/$s8 : " << regs[30] << std::endl;
-    std::cout << "$31 : " << " $ra : " << regs[31] << std::endl;
+void print_reg(int *regs, std::vector<std::pair<std::string, int>> &reg_vector) {
+    for (int i = 0; i < reg_vector.size(); ++i) {
+        std::cout << "$" << reg_vector[i].second << " : " << "$" << reg_vector[i].first << " : " << regs[reg_vector[i].second] << std::endl;
+    }
+}
+
+void print_error(int line, std::string message = "Invalid instruction") {
+    std::cout << "Error at line " << line << " : " << message << std::endl;
 }
 
 int main(int argc, const char* argv[]) {
     if (argc != 2) {
         std::cout << "Error : Incorrect syntax. Correct syntax is \n\n\t$ ./exe file.s\n" << std::endl;
+        return 0;
     }
-    else {
-        std::string input_file_name = argv[1];
-        std::ifstream infile(input_file_name);
-        std::cout << "MIPS Simulator" << std::endl << std::endl;
 
-        std::regex mode_e("\\.(\\w+)\\s*(#.*)?");
-        std::regex empty_e("\\s*(#.*)?");
-        std::regex branch_e("\\s*(\\w+)\\s*:.*");
-        std::regex br_empty_e("\\s*(\\w+)\\s*:\\s*(#.*)?");
-        // add sub mul and or nor slt
-        std::regex r_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*(#.*)?");
-        // addi andi ori slti
-        std::regex i_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\d+)\\s*(#.*)?");
-        // lw, sw
-        std::regex load_e("\\s*(\\w+\\s*:)?\\s*([ls]w)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*(#.*)?");
-        // beq, bne
-        std::regex cond_branch_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
-        // j
-        std::regex jump_e("\\s*(\\w+\\s*:)?\\s*j\\s+(\\w+)\\s*(#.*)?");
-        // halt
-        std::regex halt_e("\\s*(\\w+\\s*:)?\\s*halt\\s*(#.*)?");
-        std::smatch sm;
+    std::map<std::string, int> reg_map;
+    reg_map["r0"] = 0;
+    reg_map["at"] = 1;
+    reg_map["v0"] = 2;
+    reg_map["v1"] = 3;
+    reg_map["a0"] = 4;
+    reg_map["a1"] = 5;
+    reg_map["a2"] = 6;
+    reg_map["a3"] = 7;
+    reg_map["t0"] = 8;
+    reg_map["t1"] = 9;
+    reg_map["t2"] = 10;
+    reg_map["t3"] = 11;
+    reg_map["t4"] = 12;
+    reg_map["t5"] = 13;
+    reg_map["t6"] = 14;
+    reg_map["t7"] = 15;
+    reg_map["s0"] = 16;
+    reg_map["s1"] = 17;
+    reg_map["s2"] = 18;
+    reg_map["s3"] = 19;
+    reg_map["s4"] = 20;
+    reg_map["s5"] = 21;
+    reg_map["s6"] = 22;
+    reg_map["s7"] = 23;
+    reg_map["t8"] = 24;
+    reg_map["t9"] = 25;
+    reg_map["k0"] = 26;
+    reg_map["k1"] = 27;
+    reg_map["gp"] = 28;
+    reg_map["sp"] = 29;
+    reg_map["fp"] = 30;
+    reg_map["ra"] = 31;
 
-        std::vector<std::string> code;
-        std::string line("");
-        int mode = -1; // 0 - data, 1 - text
+    std::vector<std::pair<std::string, int>> reg_vector;
+    for (std::pair<std::string, int> i:reg_map) {
+        reg_vector.push_back(i);
+    }
+    std::sort(reg_vector.begin(), reg_vector.end(), [](const std::pair<std::string, int> &left, const std::pair<std::string, int> &right) {
+        return left.second < right.second;
+    });
 
-        std::map<std::string, int> branches;
-        int line_no = -1;
+    std::ifstream infile(argv[1]);
+    std::cout << "MIPS Simulator" << std::endl << std::endl;
 
-        while (std::getline(infile, line)) {
-            line_no++;
-            code.push_back("");
-            if (std::regex_match(line, sm, empty_e)) continue;
-            if(std::regex_match(line, sm, mode_e)) {
-                if (sm[1] == "data") mode = 0;
-                else if (sm[1] == "text") mode = 1;
-                else {
-                    std::cout << "Error : Invalid instruction at line " << line_no+1 << std::endl;
-                    return 0;
-                }
-                continue;
-            }
-            if (mode == 0) {
+    std::regex mode_e("\\s*\\.(\\w+)\\s*(\\w+)?\\s*(#.*)?");
+    std::regex empty_e("\\s*(#.*)?");
+    std::regex branch_e("\\s*(\\w+)\\s*:.*");
+    std::regex br_empty_e("\\s*(\\w+)\\s*:\\s*(#.*)?");
+    // add sub mul and or nor slt
+    std::regex r_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*(#.*)?");
+    // addi andi ori slti
+    std::regex i_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\d+)\\s*(#.*)?");
+    // lw, sw
+    std::regex load_e("\\s*(\\w+\\s*:)?\\s*([ls]w)\\s+\\$(\\w+)\\s*,\\s*(\\d+)\\s*\\(\\s*\\$(\\w+)\\s*\\)\\s*(#.*)?");
+    // beq, bne
+    std::regex cond_branch_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
+    // j
+    std::regex jump_e("\\s*(\\w+\\s*:)?\\s*j\\s+(\\w+)\\s*(#.*)?");
+    // halt
+    std::regex halt_e("\\s*(\\w+\\s*:)?\\s*halt\\s*(#.*)?");
+    std::smatch sm;
 
-            }
-            else if (mode == 1) {
-                if (std::regex_match(line, sm, branch_e)) {
-                    if(branches[sm[1]] == 0) branches[sm[1]] = line_no;
-                    else {
-                        std::cout << "Error : Two instructions with same label at line " << line_no+1 << std::endl;
-                        return 0;
-                    }
-                }
-                code[line_no] = line;
+    std::vector<std::string> code;
+    std::string line;
+    int mode = -1; // 0 - data, 1 - text
+
+    std::map<std::string, int> branches;
+    int line_no = -1;
+
+    while (std::getline(infile, line)) {
+        line_no++;
+        code.push_back("");
+        if (std::regex_match(line, sm, empty_e)) continue;
+        if(std::regex_match(line, sm, mode_e)) {
+            if (sm[1] == "data" && sm[2] == "") mode = 0;
+            else if (sm[1] == "text" && sm[2] == "") mode = 1;
+            else if (sm[1] == "globl" && sm[2] == "main") {
+
             }
             else {
-                std::cout << "Error : Invalid instruction at line " << line_no+1 << std::endl;
+                print_error(line_no+1);
                 return 0;
             }
+            continue;
         }
+        if (mode == 0) {
 
-        int *regs = new int[32];
-        regs[0] = 0;
-        for (int k = 0; k < 32; ++k) {
-            regs[k] = 0;
         }
+        else if (mode == 1) {
+            if (std::regex_match(line, sm, branch_e)) {
+                if(branches[sm[1]] == 0) branches[sm[1]] = line_no;
+                else {
+                    print_error(line_no+1, "Two instructions with same label");
+                    return 0;
+                }
+            }
+            code[line_no] = line;
+        }
+        else {
+            print_error(line_no+1);
+            return 0;
+        }
+    }
+
+    int *regs = new int[32];
+    regs[0] = 0;
+    for (int k = 0; k < 32; ++k) {
+        regs[k] = 0;
+    }
 //        char cmd;
 //        std::cout << "Enter h to see list of commands, r to run the program until halt and n to execute step by step." << std::endl << std::endl;
 //        std::cout << "mips> ";
 //        std::cin >> cmd;
 //        std::cout << std::endl;
 
-        for (int i = 0; i < code.size(); ++i) {
-            if (code[i] == "") continue;
-            else if (std::regex_match(code[i], sm, br_empty_e)) continue;
-            else if (std::regex_match(code[i], sm, r_format_e)) {
-                int reg_d = get_reg(sm[3]);
-                int reg_s = get_reg(sm[4]);
-                int reg_t = get_reg(sm[5]);
-                if (reg_d == -1 || reg_s == -1 || reg_t == -1) {
-                    std::cout << "Error : Invalid instruction at line " << i+1 << std::endl;
-                    return 0;
-                }
-                if (sm[2] == "add") {
-                    regs[reg_d] = regs[reg_s] + regs[reg_t];
-                }
-                else if (sm[2] == "sub") {
-                    regs[reg_d] = regs[reg_s] - regs[reg_t];
-                }
-                else if (sm[2] == "mul") {
-                    regs[reg_d] = regs[reg_s] * regs[reg_t];
-                }
-                else if (sm[2] == "and") {
-                    regs[reg_d] = regs[reg_s] & regs[reg_t];
-                }
-                else if (sm[2] == "or") {
-                    regs[reg_d] = regs[reg_s] | regs[reg_t];
-                }
-                else if (sm[2] == "nor") {
-                    regs[reg_d] = ~(regs[reg_s] | regs[reg_t]);
-                }
-                else if (sm[2] == "slt") {
-                    regs[reg_d] = regs[reg_s] < regs[reg_t];
-                }
-                else {
-                    std::cout << "Error : Invalid instruction at line " << i+1 << std::endl;
-                    return 0;
-                }
-                regs[0] = 0;
+    for (int i = 0; i < code.size(); ++i) {
+        if (code[i] == "") continue;
+        else if (std::regex_match(code[i], sm, br_empty_e)) continue;
+        else if (std::regex_match(code[i], sm, r_format_e)) {
+            int reg_d = get_reg(sm[3], reg_map);
+            int reg_s = get_reg(sm[4], reg_map);
+            int reg_t = get_reg(sm[5], reg_map);
+            if (reg_d == -1 || reg_s == -1 || reg_t == -1) {
+                print_error(i+1);
+                return 0;
             }
-            else if (std::regex_match(code[i], sm, i_format_e)) {
-                int reg_d = get_reg(sm[3]);
-                int reg_s = get_reg(sm[4]);
-                int imm = std::stoi(sm[5]);
-                if (reg_d == -1 || reg_s == -1) {
-                    std::cout << "Error : Invalid instruction at line " << i+1 << std::endl;
-                    return 0;
-                }
-                if (sm[2] == "addi") {
-                    regs[reg_d] = regs[reg_s] + imm;
-                }
-                else if (sm[2] == "andi") {
-                    regs[reg_d] = regs[reg_s] & imm;
-                }
-                else if (sm[2] == "ori") {
-                    regs[reg_d] = regs[reg_s] | imm;
-                }
-                else if (sm[2] == "slti") {
-                    regs[reg_d] = regs[reg_s] < imm;
-                }
-                else {
-                    std::cout << "Error : Invalid instruction at line " << i+1 << std::endl;
-                    return 0;
+            if (sm[2] == "add") {
+                regs[reg_d] = regs[reg_s] + regs[reg_t];
+            }
+            else if (sm[2] == "sub") {
+                regs[reg_d] = regs[reg_s] - regs[reg_t];
+            }
+            else if (sm[2] == "mul") {
+                regs[reg_d] = regs[reg_s] * regs[reg_t];
+            }
+            else if (sm[2] == "and") {
+                regs[reg_d] = regs[reg_s] & regs[reg_t];
+            }
+            else if (sm[2] == "or") {
+                regs[reg_d] = regs[reg_s] | regs[reg_t];
+            }
+            else if (sm[2] == "nor") {
+                regs[reg_d] = ~(regs[reg_s] | regs[reg_t]);
+            }
+            else if (sm[2] == "slt") {
+                regs[reg_d] = regs[reg_s] < regs[reg_t];
+            }
+            else {
+                print_error(i+1);
+                return 0;
+            }
+            regs[0] = 0;
+        }
+        else if (std::regex_match(code[i], sm, i_format_e)) {
+            int reg_d = get_reg(sm[3], reg_map);
+            int reg_s = get_reg(sm[4], reg_map);
+            int imm = std::stoi(sm[5]);
+            if (reg_d == -1 || reg_s == -1) {
+                print_error(i+1);
+                return 0;
+            }
+            if (sm[2] == "addi") {
+                regs[reg_d] = regs[reg_s] + imm;
+            }
+            else if (sm[2] == "andi") {
+                regs[reg_d] = regs[reg_s] & imm;
+            }
+            else if (sm[2] == "ori") {
+                regs[reg_d] = regs[reg_s] | imm;
+            }
+            else if (sm[2] == "slti") {
+                regs[reg_d] = regs[reg_s] < imm;
+            }
+            else {
+                print_error(i+1);
+                return 0;
+            }
+        }
+        else if (std::regex_match(code[i], sm, load_e)) {
+            int reg_d = get_reg(sm[3], reg_map);
+            int reg_s = get_reg(sm[5], reg_map);
+            int imm = std::stoi(sm[4]);
+            if (reg_d == -1 || reg_s == -1 || imm%4 != 0) {
+                print_error(i+1);
+                return 0;
+            }
+            if (sm[2] == "lw") {
+
+            }
+            else if (sm[2] == "sw") {
+
+            }
+            else {
+                print_error(i+1);
+                return 0;
+            }
+        }
+        else if (std::regex_match(code[i], sm, cond_branch_e)) {
+            int reg_1 = get_reg(sm[3], reg_map);
+            int reg_2 = get_reg(sm[4], reg_map);
+            int br = branches[sm[5]];
+            bool eq = (reg_1 == reg_2);
+            if (reg_1 == -1 || reg_2 == -1) {
+                print_error(i+1);
+                return 0;
+            }
+            if (br == 0) {
+                print_error(i+1, "No such label exists");
+                return 0;
+            }
+            if (sm[2] == "beq") {
+                if (eq) {
+                    i = br-1;
                 }
             }
-            else if (std::regex_match(code[i], sm, load_e)) {
-                for (unsigned j = 0; j < sm.size(); ++j) {
-                    std::cout << "[" << sm[j] << "] ";
-                }
-            }
-            else if (std::regex_match(code[i], sm, cond_branch_e)) {
-                for (unsigned j = 0; j < sm.size(); ++j) {
-                    std::cout << "[" << sm[j] << "] ";
-                }
-            }
-            else if (std::regex_match(code[i], sm, jump_e)) {
-                for (unsigned j = 0; j < sm.size(); ++j) {
-                    std::cout << "[" << sm[j] << "] ";
-                }
-            }
-            else if (std::regex_match(code[i], sm, halt_e)) {
-                for (unsigned j = 0; j < sm.size(); ++j) {
-                    std::cout << "[" << sm[j] << "] ";
+            else if (sm[2] == "bne") {
+                if (!eq) {
+                    i = br-1;
                 }
             }
             else {
-                std::cout << "Error : Invalid instruction at line " << i+1 << std::endl;
+                print_error(i+1);
                 return 0;
             }
-            std::cout << std::endl;
         }
-        print_reg(regs);
+        else if (std::regex_match(code[i], sm, jump_e)) {
+            int br = branches[sm[2]];
+            if (br == 0) {
+                print_error(i+1, "No such label exists");
+                return 0;
+            }
+            i = br-1;
+        }
+        else if (std::regex_match(code[i], sm, halt_e)) {
+            break;
+        }
+        else {
+            print_error(i+1);
+            return 0;
+        }
+        std::cout << std::endl;
     }
+    print_reg(regs, reg_vector);
+
     return 0;
 }
