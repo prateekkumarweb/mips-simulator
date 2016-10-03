@@ -2,6 +2,17 @@
 #include <fstream>
 #include <regex>
 
+std::vector<std::string> &split(std::string s, std::vector<std::string> &v, char c = ' ') {
+    v.clear();
+    std::stringstream ss(s);
+    std::string val;
+
+    while(getline(ss, val, c)) {
+        if (val.size() != 0) v.push_back(val);
+    }
+    return v;
+}
+
 int get_reg(std::string s, std::map<std::string, int> &reg_map) {
     std::regex d_e("\\d+");
     std::smatch sm;
@@ -85,16 +96,28 @@ int main(int argc, const char* argv[]) {
     // addi andi ori slti
     std::regex i_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\d+)\\s*(#.*)?");
     // lw, sw
-    std::regex load_e("\\s*(\\w+\\s*:)?\\s*([ls]w)\\s+\\$(\\w+)\\s*,\\s*(\\d+)\\s*\\(\\s*\\$(\\w+)\\s*\\)\\s*(#.*)?");
+    std::regex load_e("\\s*(\\w+\\s*:)?\\s*([a-z][a-z])\\s+\\$(\\w+)\\s*,\\s*(\\d+)\\s*\\(\\s*\\$(\\w+)\\s*\\)\\s*(#.*)?");
+    // la
+    std::regex la_e("\\s*(\\w+\\s*:)?\\s*la\\s+\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
     // beq, bne
     std::regex cond_branch_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
     // j
     std::regex jump_e("\\s*(\\w+\\s*:)?\\s*j\\s+(\\w+)\\s*(#.*)?");
     // halt
     std::regex halt_e("\\s*(\\w+\\s*:)?\\s*halt\\s*(#.*)?");
+    std::regex data_word_e("\\s*(\\w+)\\s*:\\s*\\.(\\w+)\\s+([\\w\"'\\s,]+)\\s*(#.*)?");
     std::smatch sm;
 
     std::vector<std::string> code;
+    int *regs = new int[32];
+    regs[0] = 0;
+    for (int k = 0; k < 32; ++k) {
+        regs[k] = 0;
+    }
+    std::map<int, int> data;
+    std::map<std::string, int> data_r;
+    int cp = 15000000;
+    regs[get_reg("gp", reg_map)] = cp;
     std::string line;
     int mode = -1; // 0 - data, 1 - text
 
@@ -118,7 +141,25 @@ int main(int argc, const char* argv[]) {
             continue;
         }
         if (mode == 0) {
-
+            if (std::regex_match(line, sm, data_word_e)) {
+                if (sm[2] == "word") {
+                    std::string els = sm[3];
+                    els = std::regex_replace(els, std::regex("\\s+$"), "");
+                    els = std::regex_replace(els, std::regex(",\\s*"), "|");
+                    std::vector<std::string> v;
+                    split(els, v, '|');
+                    for (std::string s : v) {
+                        int t = std::stoi(s);
+                        data[cp] = t;
+                        data_r[sm[1]] = cp;
+                        cp += 4;
+                    }
+                }
+                else {
+                    print_error(line_no+1);
+                    return 0;
+                }
+            }
         }
         else if (mode == 1) {
             if (std::regex_match(line, sm, branch_e)) {
@@ -136,11 +177,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    int *regs = new int[32];
-    regs[0] = 0;
-    for (int k = 0; k < 32; ++k) {
-        regs[k] = 0;
-    }
+
 //        char cmd;
 //        std::cout << "Enter h to see list of commands, r to run the program until halt and n to execute step by step." << std::endl << std::endl;
 //        std::cout << "mips> ";
@@ -210,6 +247,16 @@ int main(int argc, const char* argv[]) {
                 return 0;
             }
         }
+        else if (std::regex_match(code[i], sm, la_e)) {
+            int reg_d = get_reg(sm[2], reg_map);
+            std::string dt = sm[3];
+            int adr = data_r[dt];
+            if (adr == 0 || reg_d == -1) {
+                print_error(i+1);
+                return 0;
+            }
+            regs[reg_d] = adr;
+        }
         else if (std::regex_match(code[i], sm, load_e)) {
             int reg_d = get_reg(sm[3], reg_map);
             int reg_s = get_reg(sm[5], reg_map);
@@ -219,10 +266,10 @@ int main(int argc, const char* argv[]) {
                 return 0;
             }
             if (sm[2] == "lw") {
-
+                regs[reg_d] = data[imm+regs[reg_s]];
             }
             else if (sm[2] == "sw") {
-
+                data[imm+regs[reg_s]] = regs[reg_d];
             }
             else {
                 print_error(i+1);

@@ -1,7 +1,10 @@
+.data
+a: .word 25
+b: .word 15
+
 .text
-add $t0, $0, $t0
-j l
-addi $t1, $0, 36
-addi $t2, $0, 25
-l:addi $t3, $0, 45
-lw $t0, 52($6)
+main:
+la $t0, a
+lw $t1, 0($t0)
+la $t2, b
+lw $t3, 0($t2)
