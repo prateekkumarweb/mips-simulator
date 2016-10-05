@@ -2,6 +2,11 @@
 #include <fstream>
 #include <regex>
 
+void cmd(std::string &s) {
+    std::cout << "mips> ";
+    std::cin >> s;
+}
+
 std::vector<std::string> &split(std::string s, std::vector<std::string> &v, char c = ' ') {
     v.clear();
     std::stringstream ss(s);
@@ -37,44 +42,48 @@ void print_error(int line, std::string message = "Invalid instruction") {
 }
 
 int main(int argc, const char* argv[]) {
-    if (argc != 2) {
-        std::cout << "Error : Incorrect syntax. Correct syntax is \n\n\t$ ./exe file.s\n" << std::endl;
+    std::string file;
+    int mode_exec = -1;
+    switch (argc) {
+        case 2:
+            file = argv[1];
+            break;
+        case 3:
+            file = argv[1];
+            if (std::string(argv[2]) == "s") {
+                mode_exec = 1;
+            }
+            else if (std::string(argv[2]) == "e") {
+                mode_exec = 0;
+            }
+            else {
+                std::cerr << "Error : Use as '$ ./mips file.s m' where m is 's' for step execution and 'e' for execution till end." << std::endl;
+                return 0;
+            }
+            break;
+        default:
+            std::cerr << "Error : Use as '$ ./mips file.s m' where m is 's' for step execution and 'e' for execution till end." << std::endl;
+            return 0;
+    }
+
+    std::ifstream infile(file);
+    if (!infile.is_open()) {
+        std::cerr << "Error : File does not exists" << std::endl;
         return 0;
     }
 
+    std::string reg_str[] = {
+            "r0", "at", "v0", "v1", "a0", "a1", "a2", "a3",
+            "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
+            "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+            "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
+    };
+
     std::map<std::string, int> reg_map;
-    reg_map["r0"] = 0;
-    reg_map["at"] = 1;
-    reg_map["v0"] = 2;
-    reg_map["v1"] = 3;
-    reg_map["a0"] = 4;
-    reg_map["a1"] = 5;
-    reg_map["a2"] = 6;
-    reg_map["a3"] = 7;
-    reg_map["t0"] = 8;
-    reg_map["t1"] = 9;
-    reg_map["t2"] = 10;
-    reg_map["t3"] = 11;
-    reg_map["t4"] = 12;
-    reg_map["t5"] = 13;
-    reg_map["t6"] = 14;
-    reg_map["t7"] = 15;
-    reg_map["s0"] = 16;
-    reg_map["s1"] = 17;
-    reg_map["s2"] = 18;
-    reg_map["s3"] = 19;
-    reg_map["s4"] = 20;
-    reg_map["s5"] = 21;
-    reg_map["s6"] = 22;
-    reg_map["s7"] = 23;
-    reg_map["t8"] = 24;
-    reg_map["t9"] = 25;
-    reg_map["k0"] = 26;
-    reg_map["k1"] = 27;
-    reg_map["gp"] = 28;
-    reg_map["sp"] = 29;
-    reg_map["fp"] = 30;
-    reg_map["ra"] = 31;
+
+    for (int j = 0; j < 32; ++j) {
+        reg_map[reg_str[j]] = j;
+    }
 
     std::vector<std::pair<std::string, int>> reg_vector;
     for (std::pair<std::string, int> i:reg_map) {
@@ -84,8 +93,8 @@ int main(int argc, const char* argv[]) {
         return left.second < right.second;
     });
 
-    std::ifstream infile(argv[1]);
-    std::cout << "MIPS Simulator" << std::endl << std::endl;
+
+    std::cout << "MIPS Simulator" << std::endl;
 
     std::regex mode_e("\\s*\\.(\\w+)\\s*(\\w+)?\\s*(#.*)?");
     std::regex empty_e("\\s*(#.*)?");
@@ -94,9 +103,9 @@ int main(int argc, const char* argv[]) {
     // add sub mul and or nor slt
     std::regex r_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*(#.*)?");
     // addi andi ori slti
-    std::regex i_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\d+)\\s*(#.*)?");
+    std::regex i_format_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\-?\\d+)\\s*(#.*)?");
     // lw, sw
-    std::regex load_e("\\s*(\\w+\\s*:)?\\s*([a-z][a-z])\\s+\\$(\\w+)\\s*,\\s*(\\d+)\\s*\\(\\s*\\$(\\w+)\\s*\\)\\s*(#.*)?");
+    std::regex load_e("\\s*(\\w+\\s*:)?\\s*([a-z][a-z])\\s+\\$(\\w+)\\s*,\\s*(\\-?\\d+)\\s*\\(\\s*\\$(\\w+)\\s*\\)\\s*(#.*)?");
     // la
     std::regex la_e("\\s*(\\w+\\s*:)?\\s*la\\s+\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
     // beq, bne
@@ -177,12 +186,18 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-
-//        char cmd;
-//        std::cout << "Enter h to see list of commands, r to run the program until halt and n to execute step by step." << std::endl << std::endl;
-//        std::cout << "mips> ";
-//        std::cin >> cmd;
-//        std::cout << std::endl;
+    // TODO Decide mode of execution
+    while (mode_exec == -1) {
+        std::string mode_temp;
+        std::cout << "Enter s for step execution and e for execution till end" << std::endl;
+        cmd(mode_temp);
+        if (mode_temp == "s") {
+            mode_exec = 1;
+        }
+        else if (mode_temp == "e") {
+            mode_exec = 0;
+        }
+    }
 
     for (int i = 0; i < code.size(); ++i) {
         if (code[i] == "") continue;
@@ -320,8 +335,29 @@ int main(int argc, const char* argv[]) {
             return 0;
         }
         std::cout << std::endl;
+
+        if (mode_exec == 1) {
+            std::cout << "Code executed - line " << i+1 << " : " << code[i] << std::endl;
+            mode_exec = -1;
+            print_reg(regs, reg_vector);
+        }
+
+        while (mode_exec == -1) {
+            std::string mode_temp;
+            std::cout << "Enter s for step execution and e for execution till end" << std::endl;
+            cmd(mode_temp);
+            if (mode_temp == "s") {
+                mode_exec = 1;
+            }
+            else if (mode_temp == "e") {
+                mode_exec = 0;
+            }
+        }
+
     }
     print_reg(regs, reg_vector);
+
+
 
     return 0;
 }
