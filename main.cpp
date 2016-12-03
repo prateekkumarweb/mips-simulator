@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <regex>
 
@@ -33,7 +34,13 @@ int get_reg(std::string s, std::map<std::string, int> &reg_map) {
 
 void print_reg(int *regs, std::vector<std::pair<std::string, int>> &reg_vector) {
     for (int i = 0; i < reg_vector.size(); ++i) {
-        std::cout << "$" << reg_vector[i].second << " : " << "$" << reg_vector[i].first << " : " << regs[reg_vector[i].second] << std::endl;
+        std::cout << "$" <<  reg_vector[i].first << "[" << std::setw(2) << reg_vector[i].second << "] : " << regs[reg_vector[i].second] << std::endl;
+    }
+}
+
+void print_data(std::map<int, int> &data, int b, int e) {
+    for (int i = b; i < e; i+=4) {
+        std::cout << "<Memory> " << "0x" << std::setfill('0') << std::setw(sizeof(int)*2) << std::hex << i << " : " << std::dec << data[i] << std::endl;
     }
 }
 
@@ -94,7 +101,7 @@ int main(int argc, const char* argv[]) {
     });
 
 
-    std::cout << "MIPS Simulator" << std::endl;
+    std::cout << "MIPS Simulator" << std::endl << std::endl;
 
     std::regex mode_e("\\s*\\.(\\w+)\\s*(\\w+)?\\s*(#.*)?");
     std::regex empty_e("\\s*(#.*)?");
@@ -108,13 +115,15 @@ int main(int argc, const char* argv[]) {
     std::regex load_e("\\s*(\\w+\\s*:)?\\s*([a-z][a-z])\\s+\\$(\\w+)\\s*,\\s*(\\-?\\d+)\\s*\\(\\s*\\$(\\w+)\\s*\\)\\s*(#.*)?");
     // la
     std::regex la_e("\\s*(\\w+\\s*:)?\\s*la\\s+\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
+    std::regex lw_e("\\s*(\\w+\\s*:)?\\s*lw\\s+\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
+    std::regex sw_e("\\s*(\\w+\\s*:)?\\s*sw\\s+\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
     // beq, bne
     std::regex cond_branch_e("\\s*(\\w+\\s*:)?\\s*(\\w+)\\s+\\$(\\w+)\\s*,\\s*\\$(\\w+)\\s*,\\s*(\\w+)\\s*(#.*)?");
     // j
     std::regex jump_e("\\s*(\\w+\\s*:)?\\s*j\\s+(\\w+)\\s*(#.*)?");
     // halt
     std::regex halt_e("\\s*(\\w+\\s*:)?\\s*halt\\s*(#.*)?");
-    std::regex data_word_e("\\s*(\\w+)\\s*:\\s*\\.(\\w+)\\s+([\\w\"'\\s,]+)\\s*(#.*)?");
+    std::regex data_word_e("\\s*(\\w+)\\s*:\\s*\\.(\\w+)\\s+([\\-\\w\"'\\s,]+)\\s*(#.*)?");
     std::smatch sm;
 
     std::vector<std::string> code;
@@ -123,10 +132,17 @@ int main(int argc, const char* argv[]) {
     for (int k = 0; k < 32; ++k) {
         regs[k] = 0;
     }
+
     std::map<int, int> data;
     std::map<std::string, int> data_r;
-    int cp = 15000000;
-    regs[get_reg("gp", reg_map)] = cp;
+
+    int data_p_st = 10000000;
+    int data_p = data_p_st;
+    int global_p = 20000000;
+    int stack_p = 90000000;
+    regs[get_reg("gp", reg_map)] = global_p;
+    regs[get_reg("sp", reg_map)] = stack_p;
+
     std::string line;
     int mode = -1; // 0 - data, 1 - text
 
@@ -157,11 +173,11 @@ int main(int argc, const char* argv[]) {
                     els = std::regex_replace(els, std::regex(",\\s*"), "|");
                     std::vector<std::string> v;
                     split(els, v, '|');
+                    data_r[sm[1]] = data_p;
                     for (std::string s : v) {
                         int t = std::stoi(s);
-                        data[cp] = t;
-                        data_r[sm[1]] = cp;
-                        cp += 4;
+                        data[data_p] = t;
+                        data_p += 4;
                     }
                 }
                 else {
@@ -169,6 +185,7 @@ int main(int argc, const char* argv[]) {
                     return 0;
                 }
             }
+            print_data(data, data_p_st, data_p);
         }
         else if (mode == 1) {
             if (std::regex_match(line, sm, branch_e)) {
@@ -186,7 +203,6 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    // TODO Decide mode of execution
     while (mode_exec == -1) {
         std::string mode_temp;
         std::cout << "Enter s for step execution and e for execution till end" << std::endl;
@@ -272,6 +288,26 @@ int main(int argc, const char* argv[]) {
             }
             regs[reg_d] = adr;
         }
+        else if (std::regex_match(code[i], sm, lw_e)) {
+            int reg_d = get_reg(sm[2], reg_map);
+            std::string dt = sm[3];
+            int adr = data_r[dt];
+            if (adr == 0 || reg_d == -1) {
+                print_error(i+1);
+                return 0;
+            }
+            regs[reg_d] = data[adr];
+        }
+        else if (std::regex_match(code[i], sm, sw_e)) {
+            int reg_d = get_reg(sm[2], reg_map);
+            std::string dt = sm[3];
+            int adr = data_r[dt];
+            if (adr == 0 || reg_d == -1) {
+                print_error(i+1);
+                return 0;
+            }
+            data[adr] = regs[reg_d];
+        }
         else if (std::regex_match(code[i], sm, load_e)) {
             int reg_d = get_reg(sm[3], reg_map);
             int reg_s = get_reg(sm[5], reg_map);
@@ -295,7 +331,6 @@ int main(int argc, const char* argv[]) {
             int reg_1 = get_reg(sm[3], reg_map);
             int reg_2 = get_reg(sm[4], reg_map);
             int br = branches[sm[5]];
-            bool eq = (reg_1 == reg_2);
             if (reg_1 == -1 || reg_2 == -1) {
                 print_error(i+1);
                 return 0;
@@ -304,6 +339,7 @@ int main(int argc, const char* argv[]) {
                 print_error(i+1, "No such label exists");
                 return 0;
             }
+            bool eq = (regs[reg_1] == regs[reg_2]);
             if (sm[2] == "beq") {
                 if (eq) {
                     i = br-1;
@@ -334,7 +370,6 @@ int main(int argc, const char* argv[]) {
             print_error(i+1);
             return 0;
         }
-        std::cout << std::endl;
 
         if (mode_exec == 1) {
             std::cout << "Code executed - line " << i+1 << " : " << code[i] << std::endl;
@@ -344,7 +379,7 @@ int main(int argc, const char* argv[]) {
 
         while (mode_exec == -1) {
             std::string mode_temp;
-            std::cout << "Enter s for step execution and e for execution till end" << std::endl;
+            std::cout << "Enter s for step execution, e to execute till end, d to display data section, g to display global data and t to display stack data" << std::endl;
             cmd(mode_temp);
             if (mode_temp == "s") {
                 mode_exec = 1;
@@ -352,12 +387,24 @@ int main(int argc, const char* argv[]) {
             else if (mode_temp == "e") {
                 mode_exec = 0;
             }
+            else if (mode_temp == "d") {
+                print_data(data, data_p_st, data_p);
+            }
+            else if (mode_temp == "g") {
+                print_data(data, global_p, global_p+200);
+            }
+            else if (mode_temp == "t") {
+                print_data(data, stack_p-200, stack_p);
+            }
         }
 
     }
     print_reg(regs, reg_vector);
-
-
-
+    std::cout << std::endl << "DATA SECTION" << std::endl;
+    print_data(data, data_p_st, data_p);
+    std::cout << std::endl << "GLOBAL DATA" << std::endl;
+    print_data(data, global_p, global_p+200);
+    std::cout << std::endl << "STACK DATA" << std::endl;
+    print_data(data, stack_p-200, stack_p);
     return 0;
 }
